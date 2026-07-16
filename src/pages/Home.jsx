@@ -2,17 +2,24 @@ import { useEffect, useState } from 'react'
 import { Link } from 'react-router-dom'
 import { exercises, TOTAL_ROUNDS, WORK_SECONDS } from '../data/exercises.js'
 import { iconMap } from '../icons/ExerciseIcons.jsx'
-import { getCompleted } from '../utils/progress.js'
+import { getProgressData, resetDailyProgress } from '../utils/progress.js'
 import './Home.css'
 
 export default function Home() {
-  const [completed, setCompleted] = useState([])
+  const [progress, setProgress] = useState({ completed: [], sets: 0 })
 
   useEffect(() => {
-    setCompleted(getCompleted())
+    setProgress(getProgressData())
   }, [])
 
-  const doneCount = completed.length
+  const handleReset = () => {
+    if (window.confirm('Are you sure you want to reset your daily progress?')) {
+      setProgress(resetDailyProgress())
+    }
+  }
+
+  const doneCount = progress.completed.length
+  const allDone = doneCount === exercises.length
 
   return (
     <div className="home">
@@ -24,26 +31,37 @@ export default function Home() {
           Work steadily — the timer keeps pace so you don't have to.
         </p>
 
+        <div className="home-sets-count" role="status" aria-label={`Total sets completed: ${progress.sets}`}>
+          <span className="home-sets-label">Total sets completed: </span>
+          <span className="home-sets-value">{progress.sets}</span>
+        </div>
+
         <div className="home-progress" role="status" aria-label={`${doneCount} of ${exercises.length} exercises completed today`}>
           <div className="home-progress-track">
             {exercises.map((ex) => (
               <span
                 key={ex.id}
-                className={`home-progress-dot ${completed.includes(ex.id) ? 'is-done' : ''}`}
+                className={`home-progress-dot ${progress.completed.includes(ex.id) ? 'is-done' : ''}`}
                 title={ex.code}
               />
             ))}
           </div>
           <span className="home-progress-label">{doneCount} of {exercises.length} done today</span>
         </div>
+        {doneCount > 0 && (
+          <button className="btn btn-secondary home-reset-btn" onClick={handleReset}>
+            Reset Daily Progress
+          </button>
+        )}
       </header>
 
       <main className="home-grid">
-        {exercises.map((ex) => {
-          const Icon = iconMap[ex.icon]
-          const done = completed.includes(ex.id)
+        {exercises.map((ex, index) => {
+          const Icon = iconMap[ex.icon];
+          const done = progress.completed.includes(ex.id);
+          const isNext = !done && (doneCount === index || (doneCount > 0 && progress.completed.includes(exercises[index - 1]?.id)));
           return (
-            <Link to={`/exercise/${ex.id}`} key={ex.id} className={`ex-card ${done ? 'is-done' : ''}`}>
+            <Link to={`/exercise/${ex.id}`} key={ex.id} className={`ex-card ${done ? 'is-done' : ''} ${isNext && !allDone ? 'is-next' : ''}`}>
               <div className="ex-card-top">
                 <span className="ex-card-code">{ex.code}</span>
                 {done && <span className="ex-card-check" aria-label="Completed today">✓</span>}
