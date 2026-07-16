@@ -1,0 +1,50 @@
+.install-banner {
+  position: fixed;
+  left: 16px;
+  right: 16px;
+  bottom: 16px;
+  z-index: 50;
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  background: var(--ink);
+  color: #FFFEFB;
+  border-radius: 16px;
+  padding: 14px 16px;
+  box-shadow: 0 12px 32px rgba(38, 41, 34, 0.25);
+  max-width: 480px;
+  margin: 0 auto;
+}
+
+.install-text {
+  font-size: 13.5px;
+  line-height: 1.4;
+  flex: 1;
+}
+
+.install-actions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-shrink: 0;
+}
+
+.install-btn {
+  background: var(--coral);
+  color: #fff;
+  border: none;
+  border-radius: 999px;
+  padding: 9px 16px;
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.install-dismiss {
+  background: transparent;
+  border: none;
+  color: rgba(255, 254, 251, 0.6);
+  font-size: 15px;
+  cursor: pointer;
+  padding: 4px;
+}
