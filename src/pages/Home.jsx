@@ -41,23 +41,25 @@ export default function Home() {
           <span className="home-sets-value">{progress.sets}</span>
         </div>
 
-        <div className="home-progress" role="status" aria-label={`${doneCount} of ${exercises.length} exercises completed today`}>
-          <div className="home-progress-track">
-            {exercises.map((ex) => (
-              <span
-                key={ex.id}
-                className={`home-progress-dot ${progress.completed.includes(ex.id) ? 'is-done' : ''}`}
-                title={ex.code}
-              />
-            ))}
+        <div className="home-session-progress">
+          <div className="home-progress" role="status" aria-label={`${doneCount} of ${exercises.length} exercises completed today`}>
+            <div className="home-progress-track">
+              {exercises.map((ex) => (
+                <span
+                  key={ex.id}
+                  className={`home-progress-dot ${progress.completed.includes(ex.id) ? 'is-done' : ''}`}
+                  title={ex.code}
+                />
+              ))}
+            </div>
+            <span className="home-progress-label">{doneCount} of {exercises.length} done today</span>
           </div>
-          <span className="home-progress-label">{doneCount} of {exercises.length} done today</span>
+          {doneCount > 0 && (
+            <button className="btn btn-secondary home-reset-btn" onClick={handleReset}>
+              Reset Daily Progress
+            </button>
+          )}
         </div>
-        {doneCount > 0 && (
-          <button className="btn btn-secondary home-reset-btn" onClick={handleReset}>
-            Reset Daily Progress
-          </button>
-        )}
       </header>
 
       <main className="home-grid">
