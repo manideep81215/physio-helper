@@ -88,47 +88,52 @@ function useBeep() {
   }
 }
 
-function useCompletionSound() {
-  const beep = useBeep()
-  const audioRef = useRef(null)
-  const stopTimerRef = useRef(null)
+function useAudio(src) {
+  const audioRef = useRef(null);
 
   return () => {
     try {
       if (!audioRef.current) {
-        audioRef.current = new Audio('/audio/ten-second-complete.mp3')
+        audioRef.current = new Audio(src);
       }
-
-      const sound = audioRef.current
-      sound.volume = 1
-      sound.currentTime = 0
-      if (stopTimerRef.current) {
-        clearTimeout(stopTimerRef.current)
-      }
-      const playPromise = sound.play()
-      stopTimerRef.current = setTimeout(() => {
-        sound.pause()
-        sound.currentTime = 0
-      }, 4000)
-
-      if (playPromise && typeof playPromise.catch === 'function') {
-        playPromise.catch(() => {
-          if (stopTimerRef.current) {
-            clearTimeout(stopTimerRef.current)
-            stopTimerRef.current = null
-          }
-          beep(880, 0.12, 0.5)
-        })
-      }
-      return
-    } catch {
-      if (stopTimerRef.current) {
-        clearTimeout(stopTimerRef.current)
-        stopTimerRef.current = null
-      }
-      beep(880, 0.12, 0.5)
+      audioRef.current.currentTime = 0;
+      audioRef.current.play().catch(() => {}); // Ignore play errors
+    } catch (e) {
+      // audio unavailable
     }
-  }
+  };
+}
+
+function useWakeLock() {
+  const wakeLockRef = useRef(null);
+
+  const acquire = async () => {
+    if (!('wakeLock' in navigator)) return;
+    try {
+      wakeLockRef.current = await navigator.wakeLock.request('screen');
+    } catch (err) {
+      // ignore
+    }
+  };
+
+  const release = async () => {
+    if (wakeLockRef.current) {
+      try {
+        await wakeLockRef.current.release();
+        wakeLockRef.current = null;
+      } catch (err) {
+        // ignore
+      }
+    }
+  };
+
+  useEffect(() => {
+    return () => {
+      release();
+    };
+  }, []);
+
+  return { acquire, release };
 }
 
 export default function ExercisePage() {
@@ -136,7 +141,8 @@ export default function ExercisePage() {
   const exercise = getExerciseById(id)
   const [state, dispatch] = useReducer(reducer, DEFAULT_REST_SECONDS, initialState)
   const beep = useBeep()
-  const playCompletionSound = useCompletionSound()
+  const playStartSound = useAudio('/start.mp3');
+  const playStopSound = useAudio('/stop.mp3');
   const prevPhaseRef = useRef(state.phase)
   const lastTickBeepRef = useRef(null)
   const restartChimeTimersRef = useRef([])
@@ -146,6 +152,16 @@ export default function ExercisePage() {
     const t = setInterval(() => dispatch({ type: 'TICK' }), 1000)
     return () => clearInterval(t)
   }, [state.running])
+
+  const wakeLock = useWakeLock();
+  useEffect(() => {
+    if (state.running) {
+      wakeLock.acquire();
+    } else {
+      wakeLock.release();
+    }
+  }, [state.running]);
+
 
   useEffect(() => {
     return () => {
@@ -161,6 +177,7 @@ export default function ExercisePage() {
     prevPhaseRef.current = state.phase
 
     if (state.phase === 'work' && prev === 'idle') {
+      playStartSound();
       lastTickBeepRef.current = null
     }
 
@@ -175,11 +192,10 @@ export default function ExercisePage() {
       restartChimeTimersRef.current = timers
       if (navigator.vibrate) navigator.vibrate(80)
     } else if (state.phase === 'rest') {
-      playCompletionSound()
       beep(392, 0.18, 0.45)
       if (navigator.vibrate) navigator.vibrate([40, 40, 40])
     } else if (state.phase === 'done') {
-      playCompletionSound()
+      playStopSound();
       beep(660, 0.1, 0.5)
       setTimeout(() => beep(880, 0.1, 0.55), 140)
       setTimeout(() => beep(1046, 0.18, 0.6), 280)
