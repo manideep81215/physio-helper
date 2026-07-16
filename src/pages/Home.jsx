@@ -9,17 +9,12 @@ export default function Home() {
   const [progress, setProgress] = useState({ completed: [], sets: 0 })
 
   useEffect(() => {
-    async function loadProgress() {
-      const data = await getProgressData()
-      setProgress(data)
-    }
-    loadProgress()
+    setProgress(getProgressData())
   }, [])
 
-  const handleReset = async () => {
+  const handleReset = () => {
     if (window.confirm('Are you sure you want to reset your daily progress?')) {
-      const newProgress = await resetDailyProgress()
-      setProgress(newProgress)
+      setProgress(resetDailyProgress())
     }
   }
 
