@@ -2,17 +2,21 @@ import { useEffect, useState } from 'react'
 import { Link } from 'react-router-dom'
 import { exercises, TOTAL_ROUNDS, WORK_SECONDS } from '../data/exercises.js'
 import { iconMap } from '../icons/ExerciseIcons.jsx'
-import { getCompleted } from '../utils/progress.js'
+import { getProgressData } from '../utils/progress.js'
 import './Home.css'
 
 export default function Home() {
-  const [completed, setCompleted] = useState([])
+  const [progress, setProgress] = useState({ completed: [], sets: 0 })
 
   useEffect(() => {
-    setCompleted(getCompleted())
+    async function loadProgress() {
+      const data = await getProgressData()
+      setProgress(data)
+    }
+    loadProgress()
   }, [])
 
-  const doneCount = completed.length
+  const doneCount = progress.completed.length
 
   return (
     <div className="home">
@@ -29,7 +33,7 @@ export default function Home() {
             {exercises.map((ex) => (
               <span
                 key={ex.id}
-                className={`home-progress-dot ${completed.includes(ex.id) ? 'is-done' : ''}`}
+                className={`home-progress-dot ${progress.completed.includes(ex.id) ? 'is-done' : ''}`}
                 title={ex.code}
               />
             ))}
@@ -41,7 +45,7 @@ export default function Home() {
       <main className="home-grid">
         {exercises.map((ex) => {
           const Icon = iconMap[ex.icon]
-          const done = completed.includes(ex.id)
+          const done = progress.completed.includes(ex.id)
           return (
             <Link to={`/exercise/${ex.id}`} key={ex.id} className={`ex-card ${done ? 'is-done' : ''}`}>
               <div className="ex-card-top">
