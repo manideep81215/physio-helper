@@ -176,29 +176,15 @@ export default function ExercisePage() {
     const prev = prevPhaseRef.current
     prevPhaseRef.current = state.phase
 
-    if (state.phase === 'work' && prev === 'idle') {
+    if (state.phase === 'work') {
       playStartSound();
       lastTickBeepRef.current = null
-    }
-
-    if (state.phase === 'work' && prev !== 'idle') {
-      restartChimeTimersRef.current.forEach((timerId) => clearTimeout(timerId))
-      restartChimeTimersRef.current = []
-      const timers = [
-        setTimeout(() => beep(740, 0.1, 0.5), 0),
-        setTimeout(() => beep(880, 0.1, 0.55), 140),
-        setTimeout(() => beep(1046, 0.14, 0.6), 280),
-      ]
-      restartChimeTimersRef.current = timers
       if (navigator.vibrate) navigator.vibrate(80)
     } else if (state.phase === 'rest') {
-      beep(392, 0.18, 0.45)
+      playStopSound();
       if (navigator.vibrate) navigator.vibrate([40, 40, 40])
     } else if (state.phase === 'done') {
       playStopSound();
-      beep(660, 0.1, 0.5)
-      setTimeout(() => beep(880, 0.1, 0.55), 140)
-      setTimeout(() => beep(1046, 0.18, 0.6), 280)
       if (navigator.vibrate) navigator.vibrate([80, 40, 80, 40, 160])
       if (exercise) markComplete(exercise.id)
     }
