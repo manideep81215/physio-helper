@@ -187,7 +187,7 @@ export default function ExercisePage() {
     } else if (state.phase === 'done') {
       playCompletedSound();
       if (navigator.vibrate) navigator.vibrate([80, 40, 80, 40, 160])
-      if (exercise) markComplete(exercise.id) // This is now an async function
+      if (exercise) markComplete(exercise.id)
     }
   }, [state.phase]) // eslint-disable-line react-hooks/exhaustive-deps
 

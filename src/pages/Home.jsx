@@ -2,13 +2,12 @@ import { useEffect, useState } from 'react'
 import { Link } from 'react-router-dom'
 import { exercises, TOTAL_ROUNDS, WORK_SECONDS } from '../data/exercises.js'
 import { iconMap } from '../icons/ExerciseIcons.jsx'
-import { getProgressData, resetDailyProgress } from '../utils/progress.js'
-import './Home.css'
+import { getProgressData, resetDailyProgress } from "../utils/progress.js";
 
 export default function Home() {
   const [progress, setProgress] = useState({ completed: [], sets: 0 })
 
-  useEffect(() => { // Make the effect async to fetch data
+  useEffect(() => {
     async function loadProgress() {
       const data = await getProgressData()
       setProgress(data)
@@ -16,7 +15,7 @@ export default function Home() {
     loadProgress()
   }, [])
 
-  const handleReset = async () => { // handle async operation
+  const handleReset = async () => {
     if (window.confirm('Are you sure you want to reset your daily progress?')) {
       const newProgress = await resetDailyProgress()
       setProgress(newProgress)
@@ -41,25 +40,23 @@ export default function Home() {
           <span className="home-sets-value">{progress.sets}</span>
         </div>
 
-        <div className="home-session-progress">
-          <div className="home-progress" role="status" aria-label={`${doneCount} of ${exercises.length} exercises completed today`}>
-            <div className="home-progress-track">
-              {exercises.map((ex) => (
-                <span
-                  key={ex.id}
-                  className={`home-progress-dot ${progress.completed.includes(ex.id) ? 'is-done' : ''}`}
-                  title={ex.code}
-                />
-              ))}
-            </div>
-            <span className="home-progress-label">{doneCount} of {exercises.length} done today</span>
+        <div className="home-progress" role="status" aria-label={`${doneCount} of ${exercises.length} exercises completed today`}>
+          <div className="home-progress-track">
+            {exercises.map((ex) => (
+              <span
+                key={ex.id}
+                className={`home-progress-dot ${progress.completed.includes(ex.id) ? 'is-done' : ''}`}
+                title={ex.code}
+              />
+            ))}
           </div>
-          {doneCount > 0 && (
-            <button className="btn btn-secondary home-reset-btn" onClick={handleReset}>
-              Reset Daily Progress
-            </button>
-          )}
+          <span className="home-progress-label">{doneCount} of {exercises.length} done today</span>
         </div>
+        {doneCount > 0 && (
+          <button className="btn btn-secondary home-reset-btn" onClick={handleReset}>
+            Reset Daily Progress
+          </button>
+        )}
       </header>
 
       <main className="home-grid">

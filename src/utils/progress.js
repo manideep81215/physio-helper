@@ -1,54 +1,50 @@
 import { exercises } from '../data/exercises.js'
 
-const PROGRESS_KEY = 'knee-routine-progress-v2'
+// This would be the URL of your backend service.
+const API_BASE_URL = '/api'
 
-function getToday() {
-  const d = new Date()
-  return `${d.getFullYear()}-${d.getMonth() + 1}-${d.getDate()}`
-}
-
-function getProgress() {
+/**
+ * Fetches the current progress data from the backend.
+ */
+export async function getProgressData() {
   try {
-    const stored = localStorage.getItem(PROGRESS_KEY)
-    if (!stored) return { date: getToday(), completed: [], sets: 0 }
-    const progress = JSON.parse(stored)
-    // if it's a new day, reset daily progress but keep sets
-    if (progress.date !== getToday()) {
-      return { date: getToday(), completed: [], sets: progress.sets || 0 }
-    }
-    return progress
-  } catch {
-    return { date: getToday(), completed: [], sets: 0 }
+    const response = await fetch(`${API_BASE_URL}/progress`)
+    if (!response.ok) throw new Error('Failed to fetch progress')
+    return await response.json()
+  } catch (error) {
+    console.error('Error getting progress:', error)
+    // Return a default state if the API call fails
+    return { completed: [], sets: 0 }
   }
 }
 
-function saveProgress(progress) {
+/**
+ * Marks an exercise as complete by sending an update to the backend.
+ * @param {number} exerciseId The ID of the completed exercise.
+ */
+export async function markComplete(exerciseId) {
   try {
-    localStorage.setItem(PROGRESS_KEY, JSON.stringify(progress))
-  } catch {
-    // ignore
+    const response = await fetch(`${API_BASE_URL}/progress/complete`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ exerciseId }),
+    })
+    if (!response.ok) throw new Error('Failed to mark complete')
+    return await response.json()
+  } catch (error) {
+    console.error('Error marking complete:', error)
+    // On failure, you might want to return the current state or handle the error
+    return getProgressData()
   }
 }
 
-export function getProgressData() {
-  return getProgress()
-}
-
-export function markComplete(exerciseId) {
-  const progress = getProgress()
-  if (!progress.completed.includes(exerciseId)) {
-    progress.completed.push(exerciseId)
-    if (progress.completed.length === exercises.length) {
-      progress.sets = (progress.sets || 0) + 1
-    }
-    saveProgress(progress)
-  }
-  return progress
-}
-
-export function resetDailyProgress() {
-  const progress = getProgress()
-  const newProgress = { ...progress, completed: [] }
-  saveProgress(newProgress)
-  return newProgress
+/**
+ * Resets the daily progress on the backend.
+ */
+export async function resetDailyProgress() {
+  const response = await fetch(`${API_BASE_URL}/progress/reset`, {
+    method: 'POST',
+  })
+  if (!response.ok) throw new Error('Failed to reset progress')
+  return await response.json()
 }
