@@ -64,7 +64,7 @@ function reducer(state, action) {
 
 function useBeep() {
   const ctxRef = useRef(null)
-  return (freq = 880, duration = 0.12) => {
+  return (freq = 880, duration = 0.12, volume = 0.45) => {
     try {
       if (!ctxRef.current) {
         const AudioCtx = window.AudioContext || window.webkitAudioContext
@@ -74,9 +74,9 @@ function useBeep() {
       const osc = ctx.createOscillator()
       const gain = ctx.createGain()
       osc.frequency.value = freq
-      osc.type = 'sine'
+      osc.type = 'triangle'
       gain.gain.setValueAtTime(0.001, ctx.currentTime)
-      gain.gain.exponentialRampToValueAtTime(0.2, ctx.currentTime + 0.01)
+      gain.gain.exponentialRampToValueAtTime(volume, ctx.currentTime + 0.01)
       gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + duration)
       osc.connect(gain)
       gain.connect(ctx.destination)
@@ -88,19 +88,55 @@ function useBeep() {
   }
 }
 
+function useCompletionSound() {
+  const beep = useBeep()
+  const audioRef = useRef(null)
+
+  return () => {
+    try {
+      if (!audioRef.current) {
+        audioRef.current = new Audio('/audio/ten-second-complete.mp3')
+      }
+
+      const sound = audioRef.current
+      sound.volume = 1
+      sound.currentTime = 0
+      const playPromise = sound.play()
+
+      if (playPromise && typeof playPromise.catch === 'function') {
+        playPromise.catch(() => {
+          beep(880, 0.12, 0.5)
+        })
+      }
+      return
+    } catch {
+      beep(880, 0.12, 0.5)
+    }
+  }
+}
+
 export default function ExercisePage() {
   const { id } = useParams()
   const exercise = getExerciseById(id)
   const [state, dispatch] = useReducer(reducer, DEFAULT_REST_SECONDS, initialState)
   const beep = useBeep()
+  const playCompletionSound = useCompletionSound()
   const prevPhaseRef = useRef(state.phase)
   const lastTickBeepRef = useRef(null)
+  const restartChimeTimersRef = useRef([])
 
   useEffect(() => {
     if (!state.running) return
     const t = setInterval(() => dispatch({ type: 'TICK' }), 1000)
     return () => clearInterval(t)
   }, [state.running])
+
+  useEffect(() => {
+    return () => {
+      restartChimeTimersRef.current.forEach((timerId) => clearTimeout(timerId))
+      restartChimeTimersRef.current = []
+    }
+  }, [])
 
   // sound + haptic + completion side-effects on phase change
   useEffect(() => {
@@ -113,15 +149,24 @@ export default function ExercisePage() {
     }
 
     if (state.phase === 'work' && prev !== 'idle') {
-      beep(988, 0.16)
+      restartChimeTimersRef.current.forEach((timerId) => clearTimeout(timerId))
+      restartChimeTimersRef.current = []
+      const timers = [
+        setTimeout(() => beep(740, 0.1, 0.5), 0),
+        setTimeout(() => beep(880, 0.1, 0.55), 140),
+        setTimeout(() => beep(1046, 0.14, 0.6), 280),
+      ]
+      restartChimeTimersRef.current = timers
       if (navigator.vibrate) navigator.vibrate(80)
     } else if (state.phase === 'rest') {
-      beep(392, 0.16)
+      playCompletionSound()
+      beep(392, 0.18, 0.45)
       if (navigator.vibrate) navigator.vibrate([40, 40, 40])
     } else if (state.phase === 'done') {
-      beep(660, 0.1)
-      setTimeout(() => beep(880, 0.1), 140)
-      setTimeout(() => beep(1046, 0.18), 280)
+      playCompletionSound()
+      beep(660, 0.1, 0.5)
+      setTimeout(() => beep(880, 0.1, 0.55), 140)
+      setTimeout(() => beep(1046, 0.18, 0.6), 280)
       if (navigator.vibrate) navigator.vibrate([80, 40, 80, 40, 160])
       if (exercise) markComplete(exercise.id)
     }
@@ -135,7 +180,12 @@ export default function ExercisePage() {
     const tickKey = `${state.phase}-${state.round}-${state.secondsLeft}`
     if (lastTickBeepRef.current === tickKey) return
     lastTickBeepRef.current = tickKey
-    beep(660, 0.08)
+    const tickTones = {
+      3: 740,
+      2: 880,
+      1: 988,
+    }
+    beep(tickTones[state.secondsLeft] || 660, 0.12, 0.65)
     if (navigator.vibrate) navigator.vibrate(30)
   }, [state.secondsLeft, state.running, state.phase, state.round]) // eslint-disable-line react-hooks/exhaustive-deps
 
