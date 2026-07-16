@@ -8,13 +8,18 @@ import './Home.css'
 export default function Home() {
   const [progress, setProgress] = useState({ completed: [], sets: 0 })
 
-  useEffect(() => {
-    setProgress(getProgressData())
+  useEffect(() => { // Make the effect async to fetch data
+    async function loadProgress() {
+      const data = await getProgressData()
+      setProgress(data)
+    }
+    loadProgress()
   }, [])
 
-  const handleReset = () => {
+  const handleReset = async () => { // handle async operation
     if (window.confirm('Are you sure you want to reset your daily progress?')) {
-      setProgress(resetDailyProgress())
+      const newProgress = await resetDailyProgress()
+      setProgress(newProgress)
     }
   }
 

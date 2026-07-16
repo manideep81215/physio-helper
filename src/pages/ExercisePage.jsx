@@ -96,7 +96,7 @@ function useAudio(src) {
       if (!audioRef.current) {
         audioRef.current = new Audio(src);
       }
-      audioRef.current.currentTime = 0;
+      audioRef.current.currentTime = 0; // Corrected from audio.current
       audioRef.current.play().catch(() => {}); // Ignore play errors
     } catch (e) {
       // audio unavailable
@@ -143,6 +143,7 @@ export default function ExercisePage() {
   const beep = useBeep()
   const playStartSound = useAudio('/start.mp3');
   const playStopSound = useAudio('/stop.mp3');
+  const playCompletedSound = useAudio('/completed.mp3');
   const prevPhaseRef = useRef(state.phase)
   const lastTickBeepRef = useRef(null)
   const restartChimeTimersRef = useRef([])
@@ -184,9 +185,9 @@ export default function ExercisePage() {
       playStopSound();
       if (navigator.vibrate) navigator.vibrate([40, 40, 40])
     } else if (state.phase === 'done') {
-      playStopSound();
+      playCompletedSound();
       if (navigator.vibrate) navigator.vibrate([80, 40, 80, 40, 160])
-      if (exercise) markComplete(exercise.id)
+      if (exercise) markComplete(exercise.id) // This is now an async function
     }
   }, [state.phase]) // eslint-disable-line react-hooks/exhaustive-deps
 
