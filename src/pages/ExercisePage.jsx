@@ -91,6 +91,7 @@ function useBeep() {
 function useCompletionSound() {
   const beep = useBeep()
   const audioRef = useRef(null)
+  const stopTimerRef = useRef(null)
 
   return () => {
     try {
@@ -101,15 +102,30 @@ function useCompletionSound() {
       const sound = audioRef.current
       sound.volume = 1
       sound.currentTime = 0
+      if (stopTimerRef.current) {
+        clearTimeout(stopTimerRef.current)
+      }
       const playPromise = sound.play()
+      stopTimerRef.current = setTimeout(() => {
+        sound.pause()
+        sound.currentTime = 0
+      }, 4000)
 
       if (playPromise && typeof playPromise.catch === 'function') {
         playPromise.catch(() => {
+          if (stopTimerRef.current) {
+            clearTimeout(stopTimerRef.current)
+            stopTimerRef.current = null
+          }
           beep(880, 0.12, 0.5)
         })
       }
       return
     } catch {
+      if (stopTimerRef.current) {
+        clearTimeout(stopTimerRef.current)
+        stopTimerRef.current = null
+      }
       beep(880, 0.12, 0.5)
     }
   }
