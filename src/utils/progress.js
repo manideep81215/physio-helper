@@ -42,9 +42,14 @@ export async function markComplete(exerciseId) {
  * Resets the daily progress on the backend.
  */
 export async function resetDailyProgress() {
-  const response = await fetch(`${API_BASE_URL}/progress/reset`, {
-    method: 'POST',
-  })
-  if (!response.ok) throw new Error('Failed to reset progress')
-  return await response.json()
+  try {
+    const response = await fetch(`${API_BASE_URL}/progress/reset`, {
+      method: 'POST',
+    })
+    if (!response.ok) throw new Error('Failed to reset progress')
+    return await response.json()
+  } catch (error) {
+    console.error('Error resetting progress:', error)
+    return getProgressData()
+  }
 }
