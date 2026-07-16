@@ -1,43 +1,54 @@
-const KEY = 'knee-routine-progress'
+import { exercises } from '../data/exercises.js'
 
-function todayStr() {
+const PROGRESS_KEY = 'knee-routine-progress-v2'
+
+function getToday() {
   const d = new Date()
   return `${d.getFullYear()}-${d.getMonth() + 1}-${d.getDate()}`
 }
 
-function read() {
+function getProgress() {
   try {
-    const raw = localStorage.getItem(KEY)
-    if (!raw) return { date: todayStr(), completed: [] }
-    const parsed = JSON.parse(raw)
-    if (parsed.date !== todayStr()) return { date: todayStr(), completed: [] }
-    return parsed
+    const stored = localStorage.getItem(PROGRESS_KEY)
+    if (!stored) return { date: getToday(), completed: [], sets: 0 }
+    const progress = JSON.parse(stored)
+    // if it's a new day, reset daily progress but keep sets
+    if (progress.date !== getToday()) {
+      return { date: getToday(), completed: [], sets: progress.sets || 0 }
+    }
+    return progress
   } catch {
-    return { date: todayStr(), completed: [] }
+    return { date: getToday(), completed: [], sets: 0 }
   }
 }
 
-function write(state) {
+function saveProgress(progress) {
   try {
-    localStorage.setItem(KEY, JSON.stringify(state))
+    localStorage.setItem(PROGRESS_KEY, JSON.stringify(progress))
   } catch {
-    // localStorage unavailable — progress just won't persist
+    // ignore
   }
 }
 
-export function getCompleted() {
-  return read().completed
+export function getProgressData() {
+  return getProgress()
 }
 
 export function markComplete(exerciseId) {
-  const state = read()
-  if (!state.completed.includes(exerciseId)) {
-    state.completed.push(exerciseId)
-    write(state)
+  const progress = getProgress()
+  if (!progress.completed.includes(exerciseId)) {
+    progress.completed.push(exerciseId)
+    if (progress.completed.length === exercises.length) {
+      progress.sets = (progress.sets || 0) + 1
+    }
+    saveProgress(progress)
   }
-  return state.completed
+  return progress
 }
 
-export function isComplete(exerciseId) {
-  return read().completed.includes(exerciseId)
+export function resetDailyProgress() {
+  const progress = getProgress()
+  const newProgress = { ...progress, completed: [] }
+  saveProgress(newProgress)
+  return newProgress
 }
